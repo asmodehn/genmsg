@@ -39,6 +39,7 @@ values are the paths).  Compatible with ROS package system and other
 possible layouts.
 """
 
+import ast
 import os
 import sys
 
@@ -55,7 +56,12 @@ from . names import normalize_package_context, package_resource_name
 from . srvs import SrvSpec
 
 class MsgNotFound(Exception):
-    pass
+
+    def __init__(self, message, base_type=None, package=None, search_path=None):
+        super(MsgNotFound, self).__init__(message)
+        self.base_type = base_type
+        self.package = package
+        self.search_path = search_path
 
 def get_msg_file(package, base_type, search_path, ext=EXT_MSG):
     """
@@ -75,14 +81,14 @@ def get_msg_file(package, base_type, search_path, ext=EXT_MSG):
         raise ValueError("search_path must be a dictionary of {namespace: dirpath}")
     if not package in search_path:
         raise MsgNotFound("Cannot locate message [%s]: unknown package [%s] on search path [%s]" \
-                          % (base_type, package, search_path))
+                          % (base_type, package, search_path), base_type, package, search_path)
     else:
         for path_tmp in search_path[package]:
             path = os.path.join(path_tmp, "%s%s"%(base_type, ext))
             if os.path.isfile(path):
                 return path
         raise MsgNotFound("Cannot locate message [%s] in package [%s] with paths [%s]"%
-                                                (base_type, package, str(search_path[package])))
+                                                (base_type, package, str(search_path[package])), base_type, package, search_path)
 
 def get_srv_file(package, base_type, search_path):
     """
@@ -176,8 +182,7 @@ def convert_constant_value(field_type, val):
             raise InvalidMsgSpec("cannot coerce [%s] to %s (out of bounds)"%(val, field_type))
         return val
     elif field_type == 'bool':
-        # TODO: need to nail down constant spec for bool
-        return True if eval(val) else False
+        return True if ast.literal_eval(val) else False
     raise InvalidMsgSpec("invalid constant type: [%s]"%field_type)
 
 def _load_constant_line(orig_line):
@@ -198,7 +203,7 @@ def _load_constant_line(orig_line):
     else:
         line_splits = [x.strip() for x in ' '.join(line_splits[1:]).split(CONSTCHAR)] #resplit on '='
         if len(line_splits) != 2:
-            raise InvalidMsgSpec("Invalid constant declaration: %s"%l)
+            raise InvalidMsgSpec("Invalid constant declaration: %s"%orig_line)
         name = line_splits[0]
         val = line_splits[1]
 

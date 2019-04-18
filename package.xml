@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>genmsg</name>
-  <version>0.5.8</version>
+  <version>0.5.12</version>
   <description>
     Standalone Python library for generating ROS message and service data structures for various languages.
   </description>
@@ -18,8 +18,10 @@
 
   <buildtool_depend version_gte="0.5.74">catkin</buildtool_depend>
   <run_depend>catkin</run_depend>
+  <run_depend>python-empy</run_depend>
 
   <export>
     <rosdoc config="rosdoc.yaml"/>
+    <architecture_independent/>
   </export>
 </package>
